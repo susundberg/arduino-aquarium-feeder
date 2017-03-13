@@ -61,7 +61,14 @@ char* serial_receive( int* buffer_len)
   return NULL;
 }
 
-int serial_receive_number()
+ 
+void serial_print_int( const char* desc, int v )
+{
+   Serial.write( desc );
+   Serial.println( v );
+}
+
+int serial_receive_number(int min_value, int max_value)
 {
    int buffer_n = 0;
    int number;
@@ -81,7 +88,21 @@ int serial_receive_number()
       Serial.write("\n");
      
       print_prompt = true;
-      if ( serial_process_number( buffer, buffer_n , &number ) == true )
-        return number;
+      
+      if ( serial_process_number( buffer, buffer_n , &number ) == false )
+        continue;
+      
+      if ( number < min_value )
+      {
+         serial_print_int("Too small number. Min ", min_value );
+      }   
+      else if ( number > max_value)
+      {
+         serial_print_int("Too large number. Max ", max_value );
+      }
+      else
+      {
+         return number;
+      }
    }
 }

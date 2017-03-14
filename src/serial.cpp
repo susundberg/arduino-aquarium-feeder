@@ -4,14 +4,14 @@
 #include <Arduino.h>
 #include "serial.h"
 
-void serial_setup()
+void serial_setup( const char* name)
 {
   Serial.begin(9600); 
   Serial.write("***********************************\n");  
-  Serial.write("Welcome to my project!\n");
+  serial_print("Welcome to %s!\n", name );
   Serial.write("***********************************\n");
-  Serial.write( ">" );   
 }
+
 
 bool serial_process_number( const char* buffer, int buffer_n, int* convert )
 {
@@ -61,11 +61,59 @@ char* serial_receive( int* buffer_len)
   return NULL;
 }
 
- 
-void serial_print_int( const char* desc, int v )
+void serial_print( const char* format, ... )
 {
-   Serial.write( desc );
-   Serial.println( v );
+   va_list arg_list;
+   va_start(arg_list, format);
+   
+   int full_len = strlen( format );
+   int loop_offset = 0;
+   int loop;
+   
+   for ( loop = 0; loop < full_len; loop ++ )
+   {
+      if (format[loop] != '%')
+         continue;
+      
+      Serial.write( format + loop_offset, loop - loop_offset ); 
+      
+      if ( full_len == loop -1 )
+      {
+         Serial.write("\ERROR_INVALID_FORMAT\n");
+         return;
+      }
+      
+      char output_format = format[loop + 1];
+      if (output_format == 'd' )
+      {
+         int value = va_arg( arg_list, int );
+         Serial.print( value );
+      }
+      else if (output_format == 'f' )
+      {
+         double value = va_arg( arg_list, double );
+         Serial.print( value );
+      }  
+      else if (output_format == 's' )
+      {
+         const char* value = (char*)va_arg( arg_list, void* );
+         Serial.write( value );
+      }
+      else  
+      {
+         Serial.write("\ERROR_INVALID_FORMAT\n");
+         return;
+      }
+      // now loop is '%d'
+      loop_offset = loop + 2;
+      loop = loop + 1;
+   }
+   va_end(arg_list);
+   if ( loop_offset < full_len )
+   {
+      Serial.write( format + loop_offset, full_len - loop_offset ); 
+   }
+      
 }
 
 int serial_receive_number(int min_value, int max_value)
@@ -94,11 +142,11 @@ int serial_receive_number(int min_value, int max_value)
       
       if ( number < min_value )
       {
-         serial_print_int("Too small number. Min ", min_value );
+         serial_print("Too small number. Min %d\n", min_value );
       }   
       else if ( number > max_value)
       {
-         serial_print_int("Too large number. Max ", max_value );
+         serial_print("Too large number. Max %d\n", max_value );
       }
       else
       {

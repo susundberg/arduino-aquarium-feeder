@@ -26,7 +26,7 @@ void runtime_time_pass( RuntimeEeprom* runtime, int done_secs );
 bool runtime_valid( RuntimeEeprom* runtime );
 void runtime_setup(RuntimeEeprom* runtime);
 void runtime_stop(RuntimeEeprom* runtime);
-void runtime_print(RuntimeEeprom* runtime);
+void runtime_print(const RuntimeEeprom* runtime);
 
 
 #endif

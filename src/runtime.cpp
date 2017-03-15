@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "serial.h"
 
-void runtime_print(RuntimeEeprom* runtime  )
+void runtime_print(const RuntimeEeprom* runtime  )
 {
    if ( runtime->ndays == 0)
    {

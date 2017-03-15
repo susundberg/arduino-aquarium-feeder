@@ -12,8 +12,6 @@ build:
 upload:
 	( \
 	  source ../ENV//bin/activate; \
-	  platformio run --target upload; \
+	  platformio run --verbose --target upload; \
 	)
 
-build_tests:
-	g++ -Wall -O0 -Isrc/ -Itests/fakes/ -o ./build/test_bin ./tests/test_main.cpp ./src/main.cpp

@@ -6,81 +6,82 @@
 #include "runtime.h"
 #include "serial.h"
 
-void runtime_print(const RuntimeEeprom* runtime  )
+void Runtime::print( ) const
 {
-   if ( runtime->ndays == 0)
+   if ( this->eeprom.ndays == 0)
    {
       serial_print("RuntimeEeprom: not valid.\n");
       return;
    }
    serial_print("RuntimeEeprom: valid.\n");
    
-   serial_print( "   ndays: %d\n" , runtime->ndays );   
-   serial_print( "   nholes: %d\n", runtime->nholes);
-   serial_print( "   tloop: %d\n" , runtime->time_loop );
+   serial_print( "   ndays: %d\n" , this->eeprom.ndays );   
+   serial_print( "   nholes: %d\n", this->eeprom.nholes);
+   serial_print( "   tloop: %d\n" , this->eeprom.time_loop );
    
 }
 
 
-bool runtime_valid( RuntimeEeprom* runtime  )
+bool Runtime::valid( ) const
 {
-   return ( runtime->ndays > 0 && runtime->ndays < 60 );
+   return ( this->eeprom.ndays > 0 && this->eeprom.ndays < 60 );
 }
 
-void runtime_time_pass(RuntimeEeprom* runtime, int done_secs)
+bool Runtime::time_pass( int done_secs)
 {
-   static int done_mins_acc = 0;
+   this->time_acc += (done_secs)/60;
    
-   done_mins_acc += (done_secs)/60;
-   
-   if (done_mins_acc >= EEPROM_WRITE_THRESHOLD_MIN )
+   if (this->time_acc >= EEPROM_WRITE_THRESHOLD_MIN )
    {
-      runtime->time_loop += done_mins_acc;
-      runtime_save( runtime );
-      done_mins_acc = 0;
+      this->eeprom.time_loop += this->time_acc;
+      Runtime::save( );
+      this->time_acc = 0;
+      return true;
    }
+   return false;
    
 }
 
-uint16_t runtime_crc16( const RuntimeEeprom* runtime  ) 
+
+uint16_t Runtime::calculate_crc( ) const
 {
    uint16_t crc_ret = CRC_DEFAULT_SEED;
-   const char* runtime_array = (const char*)runtime;
+   const char* eeprom_array = (const char*)(&this->eeprom);
    
    int calc_size = sizeof(RuntimeEeprom) - sizeof(uint16_t);
    for ( int cloop = 0; cloop < calc_size; cloop ++ )
    {
-      crc_ret = _crc16_update( crc_ret , runtime_array[cloop] );
+      crc_ret = _crc16_update( crc_ret , eeprom_array[cloop] );
    }
    return crc_ret;
 }
 
-void runtime_save( RuntimeEeprom* runtime  )
+void Runtime::save(   )
 {
-   runtime->crc = runtime_crc16( runtime );
-   eeprom_update_block( (const char*)runtime, EEPROM_ADDR_RUNTIME, sizeof(RuntimeEeprom) );
+   this->eeprom.crc = calculate_crc(  );
+   eeprom_update_block( (const char*)(&this->eeprom), EEPROM_ADDR_RUNTIME, sizeof(RuntimeEeprom) );
 }
 
 
-void runtime_stop(  RuntimeEeprom* runtime  )
+void Runtime::stop(  )
 {
-   memset( runtime, 0x00, sizeof(RuntimeEeprom));
-   runtime_save(runtime);
+   memset( &this->eeprom, 0x00, sizeof(RuntimeEeprom));
+   Runtime::save();
 }
 
-void runtime_load( RuntimeEeprom* runtime )
+void Runtime::load( )
 {
-   eeprom_read_block( runtime, EEPROM_ADDR_RUNTIME,  sizeof(RuntimeEeprom) );
-   uint16_t crc_calc  = runtime_crc16( runtime );
-   if (crc_calc != runtime->crc )
+   eeprom_read_block( &this->eeprom, EEPROM_ADDR_RUNTIME,  sizeof(RuntimeEeprom) );
+   uint16_t crc_calc  = this->calculate_crc();
+   if (crc_calc != this->eeprom.crc )
    {
       serial_print("Invalid eeprom content -> clearing.");
-      runtime_stop( runtime );
+      Runtime::stop( );
    }
-   runtime_print(runtime);
+   Runtime::print( );
 }
 
-void runtime_setup(RuntimeEeprom* runtime)
+void Runtime::setup()
 {
    serial_print("Input number of days to stay\n");
    int ndays = serial_receive_number( 1, 255);
@@ -93,22 +94,29 @@ void runtime_setup(RuntimeEeprom* runtime)
    float sleep_hours = (24.0f ) / holes_per_day ;
    
    serial_print("-> %f holes per day -> sleep of %f hours between holes\n", holes_per_day, sleep_hours );
-   runtime->time_loop = 0;
-   runtime->ndays     = ndays;
-   runtime->nholes    = nholes;
-   runtime_save(runtime);
+   this->eeprom.time_loop = 0;
+   this->eeprom.ndays     = ndays;
+   this->eeprom.nholes    = nholes;
+   Runtime::save();
+}
+
+int Runtime::get_time() const
+{
+   return this->eeprom.time_loop + this->time_acc;
 }
 
 
-int runtime_get_hole( RuntimeEeprom* runtime )
+void Runtime::get_status( int* hole_index, bool* done ) const
 {
-   // we proceed all the holes in given time 
    
-   uint32_t time = runtime->time_loop;
+   //  We could use also 
+   /// the acculumated time, but would mean that after power shortage we would
+   /// reverse for one hole. Lets not do that.
    
-   uint32_t time_per_hole = (runtime->ndays*24L*60L) / runtime->nholes;
+   uint32_t time = this->eeprom.time_loop;
    
-   int index = (time/time_per_hole) - 1;
+   uint32_t time_per_hole = (this->eeprom.ndays*24L*60L) / this->eeprom.nholes;
    
-   return index;
+   *hole_index = (time/time_per_hole) - 1;
+   *done = (*hole_index) == (this->eeprom.nholes - 1 ); 
 }

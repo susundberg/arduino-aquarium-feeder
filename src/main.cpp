@@ -15,7 +15,7 @@
 #define PIN_SERVO_ENABLE 8
 #define N_SECONDS_IN_MINUTE (60)
 
-static RuntimeEeprom RUNTIME;
+static Runtime RUNTIME;
 static Servo SERVO;  
 
 
@@ -35,13 +35,21 @@ void setup()
   
   SERVO.attach( 9 );
   
-  runtime_load( &RUNTIME );
+  RUNTIME.load( );
   
-  if ( runtime_valid( &RUNTIME ) == true )
+  if ( RUNTIME.valid() == true )
   {
-     int curr_hole = runtime_get_hole( &RUNTIME );
-     servo_set_hole( curr_hole );
+     int curr_hole;
+     bool done;
+     
+     RUNTIME.get_status( &curr_hole, &done ) ;
+     
+     if (done == false )
+     {
+       servo_set_hole( curr_hole );
+     }
   }
+  
 }
 
 
@@ -96,7 +104,7 @@ static void toggle_led()
   state = !state;
 }
 
-bool handle_receive( RuntimeEeprom* runtime,  int sleep_time_ms )
+bool handle_receive( Runtime* runtime,  int sleep_time_ms )
 {
    for ( int loop = 0; loop < sleep_time_ms; loop += 100 )
    {
@@ -112,16 +120,20 @@ bool handle_receive( RuntimeEeprom* runtime,  int sleep_time_ms )
         
         if (strcmp( input, "setup") == 0 )
         {
-           runtime_setup( runtime );
+           runtime->setup(  );
            return true;
         }
         else if (strcmp( input, "print") == 0 )
         {
-           runtime_print( runtime );
+           runtime->print( );
+           int  hole_index;
+           bool done;
+           RUNTIME.get_status( &hole_index, &done );
+           serial_print("Current time: %d hole: %d done: %d\n", RUNTIME.get_time(), hole_index, done );
         }
         else if (strcmp( input, "stop") == 0 )
         {
-           runtime_stop( runtime );
+           runtime->stop( );
            serial_print("Runtime cleared.\n");
            return true;
         }
@@ -145,38 +157,37 @@ void loop()
 {
   toggle_led();
   
-  if ( runtime_valid( &RUNTIME ) == false )
+  // If the runtime is not valid, make led blinking noticable different
+  if ( RUNTIME.valid() == false )
   {
-     handle_receive( &RUNTIME, 500 );
+     handle_receive( &RUNTIME, 300 );
+     delay(300);
      return;
   }
   
-  // Ok we have valid structure
-  int curr_hole = runtime_get_hole( &RUNTIME );
-  serial_print("Current time %d hole: %d\n", RUNTIME.time_loop, curr_hole );
-  
-  servo_set_hole( curr_hole );
-  
-  if ( curr_hole == (RUNTIME.nholes-1) )
-  {
-     serial_print("End position reached, clearing the configuration.");
-     runtime_stop( &RUNTIME );
-  }
-  
   // wait for one minute
-  bool wait_cancelled = false;
-  for ( int sec_loop= 0; sec_loop < N_SECONDS_IN_MINUTE; sec_loop ++ )
+  int sec_loop = 0;
+  for ( sec_loop= 0; sec_loop < N_SECONDS_IN_MINUTE; sec_loop ++ )
   {
-     wait_cancelled = handle_receive( &RUNTIME, 1000 );
-     
-     if ( wait_cancelled == true )
-     {
+     if ( handle_receive( &RUNTIME, 1000 ) )
         break;
-     }
   }   
   
-  if ( wait_cancelled == false )
+  serial_print("Acc time: %d\n", RUNTIME.get_time() );
+  
+  // check if we did enter new eeprom time 
+  if ( RUNTIME.time_pass( sec_loop ) == false )
+     return;
+  
+  // we did. Move it!
+  int  hole_index;
+  bool done;
+  RUNTIME.get_status( &hole_index, &done );
+  serial_print("Move to hole: %d\n", hole_index );
+  servo_set_hole( hole_index );
+  if ( done == true )
   {
-     runtime_time_pass( &RUNTIME, 60 );
+     serial_print("End position reached, clearing the configuration.");
+     RUNTIME.stop( );
   }
 }  

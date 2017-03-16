@@ -17,5 +17,5 @@ upload:
 
 
 test_build:
-	scons 
+	scons -Y tests/tools/
 

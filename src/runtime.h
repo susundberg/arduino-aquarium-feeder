@@ -18,7 +18,6 @@ typedef struct
    uint16_t crc; 
 } RuntimeEeprom;
 
-
 void runtime_load( RuntimeEeprom* runtime );
 void runtime_save( RuntimeEeprom* runtime );
 int  runtime_get_hole( RuntimeEeprom* runtime );

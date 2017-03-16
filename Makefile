@@ -15,3 +15,7 @@ upload:
 	  platformio run --verbose --target upload; \
 	)
 
+
+test_build:
+	scons 
+

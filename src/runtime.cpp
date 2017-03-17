@@ -21,12 +21,16 @@ void Runtime::print( ) const
    
 }
 
+
 Runtime::Runtime()
 {
    memset( &(this->eeprom), 0x00, sizeof(RuntimeEeprom ));
    this->time_acc = 0;
 }
 
+Runtime::~Runtime()
+{
+}
 
 bool Runtime::valid( ) const
 {

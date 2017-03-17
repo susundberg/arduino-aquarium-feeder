@@ -15,10 +15,11 @@
 #define PIN_SERVO_ENABLE 8
 #define N_SECONDS_IN_MINUTE (60)
 
-static Runtime RUNTIME;
+// Declared as non-static since we want to use it in unittests.
+Runtime RUNTIME;
+
 static Servo SERVO;  
-
-
+static int SERVO_old_value;
 
 static void servo_set_hole( int index );
 
@@ -34,6 +35,7 @@ void setup()
   serial_print(" * type 'stop' to cancel\n" );
   
   SERVO.attach( 9 );
+  SERVO_old_value = 0xFF;
   
   RUNTIME.load( );
   
@@ -56,7 +58,7 @@ void setup()
 
 void servo_set_hole( int index )
 {
-   static int old_value = 0xFF;
+   
    static const int n_steps = 20;
    
    int target_value = index * 125 + 700;
@@ -67,7 +69,7 @@ void servo_set_hole( int index )
       target_value = 1650;
 
    // If value has not changed, do nothing
-   if ( old_value == target_value )
+   if ( SERVO_old_value == target_value )
       return;
    
    
@@ -75,25 +77,25 @@ void servo_set_hole( int index )
    delay(10);
    
    // On the first round we just set the value on what it supposed to be
-   if ( old_value == 0xFF )
+   if ( SERVO_old_value  == 0xFF )
    {
       SERVO.write( target_value / 10 );
-      old_value = target_value ;
+      SERVO_old_value  = target_value ;
    }
    else
    {
       // otherwise make 'smooth' transition
-      int value_inc = ( target_value - old_value )/(n_steps-1);
+      int value_inc = ( target_value - SERVO_old_value  )/(n_steps-1);
       for ( int loop_steps = 0; loop_steps < n_steps; loop_steps ++ )
       {
-         int value = old_value + value_inc*loop_steps;
+         int value = SERVO_old_value  + value_inc*loop_steps;
          SERVO.write( (value + 5) / 10 );
          delay( 10 );
       }
    }
    delay( 200 );
    digitalWrite( PIN_SERVO_ENABLE, LOW );
-   old_value = target_value;
+   SERVO_old_value  = target_value;
 }
 
 
@@ -121,6 +123,7 @@ bool handle_receive( Runtime* runtime,  int sleep_time_ms )
         if (strcmp( input, "setup") == 0 )
         {
            runtime->setup(  );
+           servo_set_hole( -1 );
            return true;
         }
         else if (strcmp( input, "print") == 0 )

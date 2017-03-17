@@ -21,6 +21,7 @@ class Runtime
 {
    public:
       Runtime();
+      ~Runtime();
       
       void setup( );
       void load( );

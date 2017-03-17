@@ -128,5 +128,15 @@ void Runtime::get_status( int* hole_index, bool* done ) const
    uint32_t time_per_hole = (this->eeprom.ndays*24L*60L) / this->eeprom.nholes;
    
    *hole_index = (time/time_per_hole) - 1;
-   *done = (*hole_index) == (this->eeprom.nholes - 1 ); 
+   if ( *hole_index >= (this->eeprom.nholes - 1 ) )
+   {
+      *done = true;
+      (*hole_index) = (this->eeprom.nholes - 1 ); 
+   }
+   else
+   {
+      *done = false;
+   }
+   
+   
 }

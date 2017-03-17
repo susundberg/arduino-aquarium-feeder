@@ -20,6 +20,8 @@ typedef struct
 class Runtime
 {
    public:
+      Runtime();
+      
       void setup( );
       void load( );
       void save( )  ; // modifies the crc -> not const

@@ -1,4 +1,5 @@
-arduino-feeder
+# arduino-aquarium-feeder
+Arduino code to run aquarium feeder
 
 Arduino program to power up the aquarium feeder. The building is done with platform-io. 
 

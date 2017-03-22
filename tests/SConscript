@@ -1,11 +1,13 @@
-libraries = []
-cppFlags = ['-Wall', "-O0", "-g", "-DTEST_BUILD" ]#, '-Werror']
+libraries = ['gcov']
+cppFlags = ['-Wall', "-O0", "-g", "-fprofile-arcs","-ftest-coverage" ]#, '-Werror']
 
 
 ENV = Environment()
 ENV.Append(LIBS = libraries)
 ENV.Append(CPPFLAGS = cppFlags)
 ENV.Append(CPPPATH = ["tools/", "../src/",] )
+ENV.Append(LINKFLAGS="--coverage")
+
 ENV.VariantDir('build/src', '../src', duplicate=0)
 ENV.VariantDir('build/mocks_gen', 'mocks_gen', duplicate=0)
 ENV.VariantDir('build/mocks_man', 'mocks_man', duplicate=0)

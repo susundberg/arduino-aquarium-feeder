@@ -36,13 +36,22 @@
 #define EXTERNAL 0
 
 // undefine stdlib's abs if encountered
-#ifdef abs
-#undef abs
-#endif
+// #ifdef abs
+// #undef abs
+// #endif
+// 
+// #ifdef max
+// #undef max
+// #endif
+// 
+// #ifdef min
+// #undef min
+// #endif
+// 
+// #define min(a,b) ((a)<(b)?(a):(b))
+// #define max(a,b) ((a)>(b)?(a):(b))
+// #define abs(x) ((x)>0?(x):-(x))
 
-#define min(a,b) ((a)<(b)?(a):(b))
-#define max(a,b) ((a)>(b)?(a):(b))
-#define abs(x) ((x)>0?(x):-(x))
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 #define round(x)     ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
 #define radians(deg) ((deg)*DEG_TO_RAD)
@@ -69,6 +78,39 @@ int analogRead(uint8_t);
 void analogWrite(uint8_t, int);
 void delay(unsigned long);
 
+
+#include <queue>
+#include <string>
+
+
+
+class Serial_CLS
+{
+   
+   typedef std::queue<std::string> Buffer; 
+   
+   public:
+      void write( const char* buffer, int buffer_n );
+      void write( const char* buffer );
+      void print( int value );
+      void print( double value );
+      void begin( int baudrate );
+      int available();
+      char read();
+   
+      // any printing will be appended to this vector
+      Buffer _test_output_buffer;
+      std::string _test_output_current; // current output line
+      std::queue<char> _test_input_buffer;
+      
+      void _test_clear(); // remove and reset everything from the buffers
+      void _test_set_input( const char* what );
+   protected:
+      void _test_output_string( std::string what );
+};
+
+
+extern Serial_CLS Serial;
 
 #define LED_BUILTIN 13
 

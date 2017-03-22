@@ -22,3 +22,7 @@ test_build:
 test_run:
 	./tests/tools/run_all.sh
 
+test_coverage:
+	./tests/tools/run_coverage.sh
+
+

@@ -35,22 +35,6 @@
 #define DEFAULT 1
 #define EXTERNAL 0
 
-// undefine stdlib's abs if encountered
-// #ifdef abs
-// #undef abs
-// #endif
-// 
-// #ifdef max
-// #undef max
-// #endif
-// 
-// #ifdef min
-// #undef min
-// #endif
-// 
-// #define min(a,b) ((a)<(b)?(a):(b))
-// #define max(a,b) ((a)>(b)?(a):(b))
-// #define abs(x) ((x)>0?(x):-(x))
 
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 #define round(x)     ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
@@ -115,6 +99,24 @@ extern Serial_CLS Serial;
 #define LED_BUILTIN 13
 
 /** TODO 
+// undefine stdlib's abs if encountered
+// #ifdef abs
+// #undef abs
+// #endif
+// 
+// #ifdef max
+// #undef max
+// #endif
+// 
+// #ifdef min
+// #undef min
+// #endif
+// 
+// #define min(a,b) ((a)<(b)?(a):(b))
+// #define max(a,b) ((a)>(b)?(a):(b))
+// #define abs(x) ((x)>0?(x):-(x))
+// These seems to cause troubles with queue or string include -- one should figure out why and do we need these.
+
 void analogReference(uint8_t mode);
 
 unsigned long millis(void);

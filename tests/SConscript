@@ -1,3 +1,16 @@
+#
+# This is building script for the unittests.
+#
+#
+
+# Define here tests that use several real source code files; others will be mocked
+# syntax is 'test_source_file_name' : List[ real sources ]
+# And the the test must start with "mutest_"
+MULTI_UNIT_TESTS = {}
+MULTI_UNIT_TESTS["mutest_main.cpp"] = ["runtime.cpp", "main.cpp"]
+
+
+# What libraries and flags you want
 libraries = ['gcov']
 cppFlags = ['-Wall', "-O0", "-g", "-fprofile-arcs","-ftest-coverage" ]#, '-Werror']
 
@@ -16,13 +29,6 @@ ENV.VariantDir('build/root', './', duplicate=0)
 
 ENV_TESTBIN = ENV.Clone()
 ENV_TESTBIN.Append( CPPPATH = ("mocks_gen", "mocks_man", "fakes", ), )
-
-# Define here tests that use several real source code files; others will be mocked
-# syntax is 'test_source_file_name' : List[ real sources ]
-# And the the test must start with "mutest_"
-MULTI_UNIT_TESTS = {}
-MULTI_UNIT_TESTS["mutest_main.cpp"] = ["runtime.cpp", "main.cpp"]
-
 
 
 # Scan for files 
@@ -107,7 +113,7 @@ def build_unit_test_bins( env, libsources ):
    progs = []
    for source in [str(x) for x in Glob("test_*.cpp") ]:
       real_file = "../src/" + source.replace("test_","")
-      bin_name = "build/bin/ut_" + source.split(".")[0]
+      bin_name = "build/bin/ut_" + source.split(".")[0][len("test_"):]
       sources = ["build/root/" + source, "build/src/" + real_file ]
       sources.extend(libsources )
       prog = env.Program( bin_name, sources )
@@ -135,10 +141,4 @@ TEST_LIB = build_test_lib(ENV)
 
 build_multi_unit_test_bins( ENV_TESTBIN, ( TEST_LIB, FAKE_LIB, MOCK_LIB, ) ) 
 build_unit_test_bins(ENV_TESTBIN, ( TEST_LIB, FAKE_LIB, MOCK_LIB, ) ) 
-
-## Mock generation done, start generating targets
-#test_sources = seek_headers( "./", (".cpp",) )
-#for test_source in test_sources:
-   #bin_name = "build/testbin_%s" % test_source.split(".")[0]
-   #ENV.Program( bin_name, 
 

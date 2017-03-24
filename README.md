@@ -1,5 +1,7 @@
-# arduino-aquarium-feeder
-Arduino code to run aquarium feeder and to demonstarate the arduino-simple-unittest
+Pictures
+============
+
+https://hackaday.io/project/20606-aquarium-feeder
 
 
 Building

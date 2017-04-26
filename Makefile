@@ -19,7 +19,7 @@ upload:
 test_build:
 	scons -Y tests/tools/
 
-test_run:
+test_run: test_build
 	./tests/tools/run_all.sh
 
 test_coverage:

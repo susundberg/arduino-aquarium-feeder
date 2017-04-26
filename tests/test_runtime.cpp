@@ -1,95 +1,85 @@
 
 
 #include "catch.hpp"
-#include "runtime.h"
-#include "avr/eeprom.h"
 #include <iostream>
 #include <string.h>
+#include "Arduino.h"
 
-class RuntimeTester: public Runtime
-{
-  public:
+#include "runtime.h"
+
+#include "mock_servo_we.h"
+#include "mock_stime.h"
+#include "mock_delay.h"
    
-    void set_values( RuntimeEeprom* from )
-    {
-       this->eeprom = (*from);
-    }
-    
-    void populate_values( bool valid_crc )
-    {
-      RuntimeEeprom values;
+void run_loop(Runtime* runtime, int nsecs )
+{
+   for ( int loop = 0; loop < nsecs*10; loop ++ )
+   {
+      runtime->loop();
+      millis_fake.return_val += 100;
       
-      memset( &values, 0x00, sizeof(values));
-      values.ndays  = 4;
-      values.nholes = 8;
-      this->set_values( &values );
-      if ( valid_crc )
-         values.crc = this->calculate_crc();
-      this->set_values( &values );
    }
-}; 
-
-
-TEST_CASE( "Runtime time pass gets new holes ", "[runtime]" ) 
-{
-   RuntimeTester runtime;
-   runtime.populate_values( true );
-   REQUIRE( runtime.valid() == true );
-   // 4 days 8 holes 12h per hole 
-   
-   int nchanges = 0;
-   int hole_index;
-   bool done;
-   for (int min_loop = 0; min_loop < 11*60; min_loop ++ )
-   {
-      nchanges += runtime.time_pass( 60 );
-      runtime.get_status( &hole_index, &done );
-      REQUIRE( done == false );
-      REQUIRE( hole_index == -1 );
-   }
-   REQUIRE( nchanges > 4 );
-   
-   // After a while, it will get to hole index 0
-   for (int min_loop = 0; min_loop < 2*60; min_loop ++ )
-   {
-      runtime.time_pass( 60 );
-   }
-   runtime.get_status( &hole_index, &done );
-   REQUIRE( done == false );
-   REQUIRE( hole_index == 0 );
-   
-   // and in the end it will get done
-   for (int min_loop = 0; min_loop < 4*24*60; min_loop ++ )
-   {
-      runtime.time_pass( 60 );
-   }
-   runtime.get_status( &hole_index, &done );
-   REQUIRE( done == true );
-   REQUIRE( hole_index == 7 );
-   
-
-   
 }
 
 
+   
 TEST_CASE( "Runtime loading is crc protected", "[runtime]" ) 
 {
-   RuntimeTester runtime;
-   fake_eeprom_reset();
+   DelayFromPin delay;
+   TimeFromEeprom time;
+   StatusToLed led;
+   ServoWE servo;
+   Runtime runtime;
+   ARDUINO_TEST.hookup();
    
-   SECTION( "invalid crc" ) {
-      runtime.load();
-      REQUIRE( runtime.valid() == false );
+   RESET_FAKE(millis);
+   RESET_FAKE(ServoWE__set_position);
+   RESET_FAKE(TimeFromEeprom__get_time);
+   RESET_FAKE(DelayFromPin__get_delay_min);
+   runtime.setup( &delay, &time, &led, &servo, 1 );
+   
+   ARDUINO_TEST.pin_value[ 1 ] = 1;
+   
+   SECTION("Run with invalid eeprom")
+   {
+      TimeFromEeprom__get_time_fake.return_val = TimeFromEeprom::TIME_INVALID;
+      run_loop( &runtime, 5 );
+      REQUIRE( ServoWE__set_position_fake.call_count == 0 );
+   }
+   
+   SECTION("Run with delay 00")
+   {
+      DelayFromPin__get_delay_min_fake.return_val = 00;
+      run_loop( &runtime, 5 );
+      REQUIRE( ServoWE__set_position_fake.call_count == 1 );
+      REQUIRE( ServoWE__set_position_fake.arg2_val == true );
+      REQUIRE( ServoWE__set_position_fake.arg1_val == runtime.calculate_hole_angle(-1) );
       
-   };
-
-   SECTION( "valid crc" ) {
-      runtime.populate_values( true );
-      runtime.save();
-      runtime.populate_values( false );
-      runtime.load();
-      REQUIRE( runtime.valid() == true );
+      run_loop( &runtime, 30 );
+      REQUIRE( ServoWE__set_position_fake.arg1_val == runtime.calculate_hole_angle(0) );
+      REQUIRE( ServoWE__set_position_fake.arg2_val == false );
+   }
+   
+   SECTION("Run with delay 01")
+   {
+      DelayFromPin__get_delay_min_fake.return_val = 12*60;
+      run_loop( &runtime, 5 );
+      REQUIRE( ServoWE__set_position_fake.call_count > 0 );
+      REQUIRE( ServoWE__set_position_fake.arg1_val == runtime.calculate_hole_angle(-1) );
       
-   };   
+      // Elapse 11h 59min
+      for (int loop = 0;loop < runtime.NHOLES; loop ++ )
+      {
+         TimeFromEeprom__get_time_fake.return_val = loop*12*60 + 1;
+         run_loop( &runtime, 3 );
+         REQUIRE( ServoWE__set_position_fake.arg1_val == runtime.calculate_hole_angle(loop - 1) );
+      }
+      RESET_FAKE( ServoWE__set_position );
+      TimeFromEeprom__get_time_fake.return_val = (runtime.NHOLES+1)*12*60 + 1;
+      run_loop( &runtime, 3 );
+      REQUIRE( ServoWE__set_position_fake.call_count == 0 );
+      
+   }
+  
    
 }

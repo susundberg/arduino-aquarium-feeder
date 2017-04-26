@@ -5,27 +5,13 @@ This is automatically generated mock file, see header file for more details.
 
 
 #include "mock_runtime.h"
-DEFINE_FAKE_VOID_FUNC( Runtime__Runtime,  Runtime* );
- Runtime::Runtime()  { Runtime__Runtime(  this ); }
-DEFINE_FAKE_VOID_FUNC( Runtime__Runtime_DTOR,  Runtime* );
- Runtime::~Runtime()  { Runtime__Runtime_DTOR(  this ); }
-DEFINE_FAKE_VOID_FUNC( Runtime__setup,  Runtime* );
-void Runtime::setup()  { Runtime__setup(  this ); }
-DEFINE_FAKE_VOID_FUNC( Runtime__load,  Runtime* );
-void Runtime::load()  { Runtime__load(  this ); }
-DEFINE_FAKE_VOID_FUNC( Runtime__save,  Runtime* );
-void Runtime::save()  { Runtime__save(  this ); }
-DEFINE_FAKE_VOID_FUNC( Runtime__stop,  Runtime* );
-void Runtime::stop()  { Runtime__stop(  this ); }
-DEFINE_FAKE_VALUE_FUNC( bool, Runtime__time_pass,  Runtime*, int );
-bool Runtime::time_pass(int done_secs)  { return Runtime__time_pass(  this, done_secs ); }
-DEFINE_FAKE_VALUE_FUNC( bool, Runtime__valid, const Runtime* );
-bool Runtime::valid() const { return Runtime__valid(  this ); }
-DEFINE_FAKE_VOID_FUNC( Runtime__print, const Runtime* );
-void Runtime::print() const { Runtime__print(  this ); }
-DEFINE_FAKE_VALUE_FUNC( int, Runtime__get_time, const Runtime* );
-int Runtime::get_time() const { return Runtime__get_time(  this ); }
-DEFINE_FAKE_VOID_FUNC( Runtime__get_status, const Runtime*, int*, bool* );
-void Runtime::get_status(int* holes, bool* done) const { Runtime__get_status(  this, holes, done ); }
-DEFINE_FAKE_VALUE_FUNC( uint16_t, Runtime__calculate_crc, const Runtime* );
-uint16_t Runtime::calculate_crc() const { return Runtime__calculate_crc(  this ); }
+DEFINE_FAKE_VOID_FUNC( Runtime__setup,  Runtime*, DelayFromPin*, TimeFromEeprom*, StatusToLed*, ServoWE*, int );
+void Runtime::setup(DelayFromPin* delay, TimeFromEeprom* time, StatusToLed* led, ServoWE* servo, int pin_button)  { Runtime__setup(  this, delay, time, led, servo, pin_button ); }
+DEFINE_FAKE_VOID_FUNC( Runtime__loop,  Runtime* );
+void Runtime::loop()  { Runtime__loop(  this ); }
+DEFINE_FAKE_VALUE_FUNC( int, Runtime__calculate_hole_angle, const Runtime*, int );
+int Runtime::calculate_hole_angle(int hole_index) const { return Runtime__calculate_hole_angle(  this, hole_index ); }
+DEFINE_FAKE_VOID_FUNC( Runtime___servo_drive,  Runtime*, int, bool );
+void Runtime::_servo_drive(int position, bool direct)  { Runtime___servo_drive(  this, position, direct ); }
+DEFINE_FAKE_VOID_FUNC( Runtime__logic,  Runtime* );
+void Runtime::logic()  { Runtime__logic(  this ); }
